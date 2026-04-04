@@ -84,8 +84,21 @@ for (let i = 1; i <= 9; i++) {
 }
 
 export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
-  // Memoize config to prevent recreation
-  const config = useMemo(() => ({ ...DEFAULT_CONFIG, ...options.config }), []);
+  // Detect mobile for adjusted difficulty
+  const isMobile = useMemo(() => {
+    return 'ontouchstart' in window || window.innerWidth < 768;
+  }, []);
+  
+  // Memoize config to prevent recreation, with mobile adjustments
+  const config = useMemo(() => {
+    const baseConfig = { ...DEFAULT_CONFIG, ...options.config };
+    if (isMobile) {
+      // More forgiving gap sizes on mobile
+      baseConfig.initialGapSize = 320; // vs 280 on desktop
+      baseConfig.minGapSize = 160;     // vs 140 on desktop
+    }
+    return baseConfig;
+  }, [isMobile]);
   
   // Store all mutable state in refs to avoid closure issues
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -205,11 +218,13 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     }
     
     // Bounds - progressively tighter tunnel as game goes on
+    // More forgiving on mobile
+    const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || window.innerWidth < 768);
     const level = gameStateRef.current.level || 1;
     const levelNarrow = Math.min(0.10, (level - 1) * 0.015); // Narrows with each level
     const minTop = 55;
-    const maxTop = canvasHeight * (0.28 + levelNarrow);   // Pushes ceiling further down
-    const minBottom = canvasHeight * (0.72 - levelNarrow); // Pushes floor further up
+    const maxTop = canvasHeight * (isMobile ? 0.32 : 0.28) + canvasHeight * levelNarrow;   // More space on mobile
+    const minBottom = canvasHeight * (isMobile ? 0.68 : 0.72) - canvasHeight * levelNarrow; // More space on mobile
     const maxBottom = canvasHeight - 55;
     
     // Clamp positions (snap to bounds)
@@ -289,12 +304,15 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     // Remove off-screen segments
     t.segments = t.segments.filter(s => s.x > -config.segmentWidth);
     
-    // Fade out obstacles approaching left edge, remove fully faded ones
+    // Fade and remove obstacles only when fully off-screen
     t.obstacles = t.obstacles.filter(o => {
-      if (o.x < -60) return false; // Hard remove past edge
-      if (o.x < 40) {
-        // Fade as approaching left edge
-        o.opacity = Math.max(0, o.x / 40);
+      // Only remove when right edge is completely past left screen edge
+      if (o.x + o.width < -10) return false;
+      
+      // Start fading only when entering off-screen area
+      if (o.x < 0) {
+        // Fade based on how much is off-screen
+        o.opacity = Math.max(0, (o.x + o.width) / o.width);
       }
       return true;
     });
@@ -904,7 +922,9 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     ctx.scale(-1, 1);
     ctx.rotate((-h.rotation * Math.PI) / 180);
     
-    const scale = 0.4;
+    // Slightly smaller on mobile for better visibility/control
+    const isMobile = 'ontouchstart' in window || window.innerWidth < 768;
+    const scale = isMobile ? 0.32 : 0.4;
     const bodyWidth = 200 * scale;
     const bodyHeight = 80 * scale;
     
