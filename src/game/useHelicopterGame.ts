@@ -44,14 +44,15 @@ const smokeImages = {
 
 // No rock sprites needed - we draw custom blocks matching terrain colors
 
-// Set image sources
-helicopterImages.body.src = '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_body.png';
-helicopterImages.topRotor1.src = '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_top_rotor_frame_1.png';
-helicopterImages.topRotor2.src = '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_top_rotor_frame_2.png';
-helicopterImages.backRotor1.src = '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_back_rotor_frame_1.png';
-helicopterImages.backRotor2.src = '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_back_rotor_frame_2.png';
-smokeImages.small.src = '/assets/sprites/smoke/smoke-small.png';
-smokeImages.medium.src = '/assets/sprites/smoke/smoke-medium.png';
+// Set image sources with correct base URL for GitHub Pages
+const baseUrl = import.meta.env.BASE_URL;
+helicopterImages.body.src = `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_body.png`;
+helicopterImages.topRotor1.src = `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_top_rotor_frame_1.png`;
+helicopterImages.topRotor2.src = `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_top_rotor_frame_2.png`;
+helicopterImages.backRotor1.src = `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_back_rotor_frame_1.png`;
+helicopterImages.backRotor2.src = `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_back_rotor_frame_2.png`;
+smokeImages.small.src = `${baseUrl}assets/sprites/smoke/smoke-small.png`;
+smokeImages.medium.src = `${baseUrl}assets/sprites/smoke/smoke-medium.png`;
 
 /**
  * Background layer system - loads layers 2-6 from each Bg folder
@@ -67,11 +68,12 @@ const backgroundSets: BackgroundSet[] = [];
 
 function loadBackgroundLayers(bgNumber: number): BackgroundSet {
   const layers: HTMLImageElement[] = [];
+  const baseUrl = import.meta.env.BASE_URL;
   
   // Load layers 2 through 6 (skip layer 1 which is ground)
   for (let layer = 2; layer <= 6; layer++) {
     const img = new Image();
-    img.src = `/assets/sprites/seamless-bgs/Bg${bgNumber}/Layer${layer}.png`;
+    img.src = `${baseUrl}assets/sprites/seamless-bgs/Bg${bgNumber}/Layer${layer}.png`;
     layers.push(img);
   }
   
