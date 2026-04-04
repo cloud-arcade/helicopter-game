@@ -1,6 +1,6 @@
 /**
  * Game Container Component
- * Main container that manages game screens and canvas
+ * Main container that manages game screens - fully responsive
  */
 
 import { useGameContext } from '../context/GameContext';
@@ -15,7 +15,7 @@ export function GameContainer() {
   const { gameState } = state;
 
   return (
-    <div className="relative w-full h-full max-w-4xl max-h-[600px] bg-background rounded-xl overflow-hidden shadow-2xl border border-white/5">
+    <div className="relative w-full h-full bg-background overflow-hidden">
       {gameState === 'loading' && <LoadingScreen />}
       {gameState === 'menu' && <MenuScreen />}
       {(gameState === 'playing' || gameState === 'paused') && (

@@ -1,131 +1,136 @@
 /**
- * Test Panel Screen
- * Simple button interface for testing CloudArcade platform integration
- * 
- * DELETE THIS FILE and replace with your actual game!
+ * Game Screen Component
+ * Main helicopter game canvas and controls
  */
 
+import { useEffect, useRef, useCallback } from 'react';
 import { useGameContext } from '../../context/GameContext';
 import { useCloudArcade } from '../../hooks/useCloudArcade';
-import { Button } from '../ui/Button';
+import { useHelicopterGame } from '../../game';
 
 export function GameScreen() {
   const { state, dispatch } = useGameContext();
-  const { startSession, endSession, submitScore, gameOver, reportError } = useCloudArcade();
+  const { submitScore, gameOver, endSession } = useCloudArcade();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const gameInitializedRef = useRef(false);
 
-  const handleAddScore = (amount: number) => {
-    dispatch({ type: 'ADD_SCORE', payload: amount });
-  };
+  // Store callbacks in refs to avoid stale closures
+  const stateRef = useRef(state);
+  const dispatchRef = useRef(dispatch);
+  const cloudArcadeRef = useRef({ submitScore, gameOver, endSession });
+  
+  useEffect(() => {
+    stateRef.current = state;
+    dispatchRef.current = dispatch;
+    cloudArcadeRef.current = { submitScore, gameOver, endSession };
+  });
 
-  const handleSubmitScore = () => {
-    submitScore(state.score, { level: state.level, testMode: true });
-  };
-
-  const handleGameOver = (isHighScore: boolean) => {
-    gameOver(state.score, true);
-    if (isHighScore && state.score > state.highScore) {
-      dispatch({ type: 'SET_HIGH_SCORE', payload: state.score });
+  const handleGameOver = useCallback((finalScore: number) => {
+    const { submitScore, gameOver, endSession } = cloudArcadeRef.current;
+    submitScore(finalScore, { gameType: 'helicopter' });
+    gameOver(finalScore, true);
+    endSession();
+    
+    if (finalScore > stateRef.current.highScore) {
+      dispatchRef.current({ type: 'SET_HIGH_SCORE', payload: finalScore });
     }
-    dispatch({ type: 'SET_STATE', payload: 'gameover' });
-  };
+    dispatchRef.current({ type: 'SET_STATE', payload: 'gameover' });
+  }, []);
 
-  const handleSendError = () => {
-    reportError('Test error from game');
-  };
+  const game = useHelicopterGame({
+    onGameOver: handleGameOver,
+  });
 
-  const handleBackToMenu = () => {
-    dispatch({ type: 'SET_STATE', payload: 'menu' });
-  };
+  // Store game in ref for use in effects
+  const gameRef = useRef(game);
+  useEffect(() => {
+    gameRef.current = game;
+  });
+
+  // Initialize canvas and game ONCE when mounted
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+    
+    gameRef.current.initGame(canvas);
+    gameRef.current.setHighScore(stateRef.current.highScore);
+    gameRef.current.startLoop();
+    gameInitializedRef.current = true;
+
+    // Handle resize without full reinit
+    const handleResize = () => {
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+    };
+
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+      gameRef.current.stopLoop();
+    };
+  }, []);
+
+  // Input handlers
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        gameRef.current.handleInputStart();
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        gameRef.current.handleInputEnd();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  // Mouse/touch handlers
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    gameRef.current.handleInputStart();
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    gameRef.current.handleInputEnd();
+  }, []);
 
   return (
-    <div className="absolute inset-0 flex flex-col gap-4 p-6 bg-gradient-to-b from-zinc-950 to-background overflow-hidden">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Platform Test Panel</h1>
-        <p className="text-sm text-zinc-500 mt-1">CloudArcade postMessage Integration</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
-        {/* Connection Status */}
-        <section className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 flex flex-col">
-          <h2 className="text-[0.7rem] font-medium text-zinc-500 uppercase tracking-wider mb-3">Status</h2>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-0.5 p-2 bg-black/30 rounded-lg">
-              <span className="text-[0.65rem] text-zinc-500 uppercase tracking-wide">Platform</span>
-              <span className={`text-sm font-semibold font-mono ${state.isPlatformConnected ? 'text-green-500' : 'text-zinc-500'}`}>
-                {state.isPlatformConnected ? '✓ Connected' : '○ Standalone'}
-              </span>
-            </div>
-            <div className="flex flex-col gap-0.5 p-2 bg-black/30 rounded-lg">
-              <span className="text-[0.65rem] text-zinc-500 uppercase tracking-wide">User</span>
-              <span className="text-sm font-semibold font-mono text-white">{state.userId || '—'}</span>
-            </div>
-            <div className="flex flex-col gap-0.5 p-2 bg-black/30 rounded-lg">
-              <span className="text-[0.65rem] text-zinc-500 uppercase tracking-wide">Session</span>
-              <span className="text-sm font-semibold font-mono text-white">{state.sessionId?.slice(0, 8) || '—'}</span>
-            </div>
-            <div className="flex flex-col gap-0.5 p-2 bg-black/30 rounded-lg">
-              <span className="text-[0.65rem] text-zinc-500 uppercase tracking-wide">State</span>
-              <span className="text-sm font-semibold font-mono text-white">{state.gameState}</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Score Testing */}
-        <section className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 flex flex-col">
-          <h2 className="text-[0.7rem] font-medium text-zinc-500 uppercase tracking-wider mb-3">Score</h2>
-          <div className="flex justify-center gap-8 mb-3 text-sm">
-            <span>Current: <strong className="text-xl font-bold font-mono text-green-500">{state.score}</strong></span>
-            <span>Best: <strong className="text-xl font-bold font-mono text-green-500">{state.highScore}</strong></span>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button onClick={() => handleAddScore(10)} size="small">+10</Button>
-            <Button onClick={() => handleAddScore(100)} size="small">+100</Button>
-            <Button onClick={() => handleAddScore(1000)} size="small">+1K</Button>
-            <Button onClick={() => dispatch({ type: 'SET_SCORE', payload: 0 })} variant="secondary" size="small">Reset</Button>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-center mt-2">
-            <Button onClick={handleSubmitScore} variant="primary" size="small">Submit Score</Button>
-          </div>
-        </section>
-
-        {/* Session Controls */}
-        <section className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 flex flex-col">
-          <h2 className="text-[0.7rem] font-medium text-zinc-500 uppercase tracking-wider mb-3">Session</h2>
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button onClick={() => startSession()} variant="primary" size="small">Start</Button>
-            <Button onClick={() => endSession()} variant="secondary" size="small">End</Button>
-          </div>
-        </section>
-
-        {/* Game Over Testing */}
-        <section className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 flex flex-col">
-          <h2 className="text-[0.7rem] font-medium text-zinc-500 uppercase tracking-wider mb-3">Game Over</h2>
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button onClick={() => handleGameOver(false)} variant="secondary" size="small">Normal</Button>
-            <Button onClick={() => handleGameOver(true)} variant="primary" size="small">High Score</Button>
-          </div>
-        </section>
-
-        {/* Error Testing */}
-        <section className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 flex flex-col">
-          <h2 className="text-[0.7rem] font-medium text-zinc-500 uppercase tracking-wider mb-3">Error</h2>
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button onClick={handleSendError} variant="danger" size="small">Send Test Error</Button>
-          </div>
-        </section>
-
-        {/* Navigation */}
-        <section className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 flex flex-col">
-          <h2 className="text-[0.7rem] font-medium text-zinc-500 uppercase tracking-wider mb-3">Navigation</h2>
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button onClick={handleBackToMenu} variant="secondary" size="small">← Menu</Button>
-          </div>
-        </section>
-      </div>
-
-      <p className="text-[0.7rem] text-zinc-600 text-center">
-        Open DevTools console for logs • <code className="bg-white/5 px-1.5 py-0.5 rounded text-[0.65rem] font-mono">npm run test:harness</code> for platform simulation
-      </p>
+    <div 
+      ref={containerRef}
+      className="absolute inset-0 bg-zinc-950 cursor-pointer select-none touch-none"
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <canvas
+        ref={canvasRef}
+        className="block w-full h-full"
+      />
     </div>
   );
 }
