@@ -11,12 +11,21 @@ export function MenuScreen() {
   const { state, dispatch } = useGameContext();
   const { startSession } = useCloudArcade();
   const [helicopterY, setHelicopterY] = useState(0);
+  const [rotorFrame, setRotorFrame] = useState(0);
 
   // Animated helicopter bobbing
   useEffect(() => {
     const interval = setInterval(() => {
       setHelicopterY(Math.sin(Date.now() / 500) * 6);
     }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Rotor animation - alternate frames for spinning effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRotorFrame(prev => prev === 0 ? 1 : 0);
+    }, 100);
     return () => clearInterval(interval);
   }, []);
 
@@ -61,14 +70,36 @@ export function MenuScreen() {
           <p className="text-[10px] sm:text-xs text-white/50 tracking-[0.3em] uppercase font-mono">Cave Run</p>
         </div>
 
-        {/* Helicopter icon */}
+        {/* Helicopter icon with animated rotors */}
         <div className="relative my-1 animate-fade-slide-in delay-200">
-          <img 
-            src={`${import.meta.env.BASE_URL}assets/sprites/attack_helicopter/pngs/flying_side_view/attack_helicopter_side_view_frame_1.png`} 
-            alt="Helicopter"
-            className="relative w-24 sm:w-32 h-auto drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-            style={{ transform: `translateY(${helicopterY}px)` }}
-          />
+          <div 
+            className="relative w-24 sm:w-32"
+            style={{ 
+              transform: `translateY(${helicopterY}px) scaleX(-1)`,
+              filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.15))'
+            }}
+          >
+            {/* Helicopter body */}
+            <img 
+              src={`${import.meta.env.BASE_URL}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_body.png`} 
+              alt="Helicopter"
+              className="relative w-full h-auto"
+            />
+            
+            {/* Top rotor - animated */}
+            <img 
+              src={`${import.meta.env.BASE_URL}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_top_rotor_frame_${rotorFrame + 1}.png`} 
+              alt=""
+              className="absolute top-[-8%] left-[10%] w-[90%] h-auto"
+            />
+            
+            {/* Back rotor - animated */}
+            <img 
+              src={`${import.meta.env.BASE_URL}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_back_rotor_frame_${rotorFrame + 1}.png`} 
+              alt=""
+              className="absolute top-[35%] right-[-2%] w-[13%] h-auto"
+            />
+          </div>
         </div>
 
         {/* Control instructions - tactical style */}

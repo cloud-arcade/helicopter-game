@@ -67,33 +67,61 @@ export function LoadingScreen() {
   }, [dispatch]);
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-zinc-900 via-zinc-950 to-background">
-      <div className="flex flex-col items-center gap-6">
-        {/* Helicopter icon with rotor animation */}
-        <div className="relative">
-          <div className="w-16 h-16 flex items-center justify-center">
-            <div className="absolute w-12 h-1 bg-gradient-to-r from-transparent via-green-500 to-transparent rounded-full animate-spin" 
-                 style={{ animationDuration: '0.2s' }} />
-            <div className="w-8 h-6 bg-green-600 rounded-sm" />
-          </div>
-        </div>
+    <div className="absolute inset-0 flex items-center justify-center bg-black/75 backdrop-blur-md">
+      <div className="relative flex flex-col items-center gap-4 sm:gap-5 p-6 sm:p-8 w-full max-w-xs sm:max-w-sm bg-slate-900/95 backdrop-blur-xl border border-white/20 shadow-2xl clip-tactical">
+        {/* Corner accents */}
+        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white/30" />
+        <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white/30" />
 
-        {/* Title */}
-        <h2 className="text-xl font-semibold text-green-500 tracking-wide">HELICOPTER</h2>
-
-        {/* Loading text */}
-        <p className="text-sm text-zinc-400 tracking-wide">{loadingText}</p>
-
-        {/* Progress bar */}
-        <div className="w-56 h-2 bg-zinc-800 rounded-full overflow-hidden">
+        {/* Helicopter rotor animation */}
+        <div className="relative flex items-center justify-center w-16 h-16">
           <div 
-            className="h-full bg-gradient-to-r from-green-600 to-green-400 transition-all duration-150 ease-out" 
-            style={{ width: `${progress}%` }} 
+            className="absolute w-14 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent"
+            style={{ 
+              animation: 'spin 0.15s linear infinite'
+            }}
+          />
+          <div className="w-10 h-7 bg-white/20 border border-white/30" 
+               style={{
+                 clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)'
+               }}
           />
         </div>
 
-        {/* Progress percentage */}
-        <span className="text-xs text-zinc-500 font-mono">{Math.round(progress)}%</span>
+        {/* Title */}
+        <div className="flex flex-col items-center gap-1">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-wider text-white uppercase">
+            // HELICOPTER
+          </h2>
+          <p className="text-[10px] sm:text-xs text-white/50 tracking-[0.3em] uppercase font-mono">Cave Run</p>
+        </div>
+
+        {/* Loading text */}
+        <div className="px-4 py-2 bg-black/40 border border-white/10">
+          <p className="text-xs sm:text-sm text-white/70 tracking-wide font-mono uppercase">{loadingText}</p>
+        </div>
+
+        {/* Progress bar - tactical style */}
+        <div className="w-full flex flex-col gap-2">
+          <div className="w-full h-2 bg-black/40 border border-white/10 overflow-hidden">
+            <div 
+              className="h-full bg-white/30 transition-all duration-200 ease-out" 
+              style={{ width: `${progress}%` }} 
+            />
+          </div>
+          
+          {/* Progress percentage */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs text-white/40 font-mono uppercase tracking-wider">Progress</span>
+            <span className="text-xs sm:text-sm text-white font-mono font-bold">{Math.round(progress)}%</span>
+          </div>
+        </div>
+
+        {/* System status indicator */}
+        <div className="flex items-center gap-2 mt-1">
+          <div className="w-1.5 h-1.5 bg-white animate-glow-pulse" />
+          <span className="text-[10px] sm:text-xs text-white/50 font-mono tracking-wider uppercase">System Init</span>
+        </div>
       </div>
     </div>
   );
