@@ -3,7 +3,7 @@
  * Clean overlay on top of crashed game state
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useGameContext } from '../../context/GameContext';
 import { useCloudArcade } from '../../hooks/useCloudArcade';
 
@@ -12,6 +12,7 @@ export function GameOverScreen() {
   const { startSession } = useCloudArcade();
   const [showNewRecord, setShowNewRecord] = useState(false);
   const [countedScore, setCountedScore] = useState(0);
+  const [canRestart, setCanRestart] = useState(false);
 
   // Check for new high score
   useEffect(() => {
@@ -39,12 +40,32 @@ export function GameOverScreen() {
     animate();
   }, [state.score]);
 
-  const handlePlayAgain = () => {
+  // Delay restart ability to prevent accidental restart
+  useEffect(() => {
+    setCanRestart(false);
+    const timer = setTimeout(() => setCanRestart(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handlePlayAgain = useCallback(() => {
+    if (!canRestart) return;
     setShowNewRecord(false);
     startSession();
     dispatch({ type: 'RESET_GAME' });
     dispatch({ type: 'SET_STATE', payload: 'playing' });
-  };
+  }, [canRestart, startSession, dispatch]);
+
+  // Listen for Space key to restart
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.code === 'Space' || e.key === ' ') && canRestart) {
+        e.preventDefault();
+        handlePlayAgain();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handlePlayAgain, canRestart]);
 
   const handleMenu = () => {
     setShowNewRecord(false);
@@ -53,7 +74,11 @@ export function GameOverScreen() {
   };
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div 
+      className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm cursor-pointer"
+      onClick={handlePlayAgain}
+      onTouchEnd={(e) => { e.preventDefault(); handlePlayAgain(); }}
+    >
       {/* Main content card - responsive sizing */}
       <div className="flex flex-col items-center gap-3 sm:gap-4 p-6 sm:p-8 w-full max-w-xs sm:max-w-sm bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-red-500/30 shadow-2xl">
         {/* Crash title */}
@@ -93,15 +118,16 @@ export function GameOverScreen() {
         {/* Action buttons */}
         <div className="flex flex-col gap-2 w-full mt-1 sm:mt-2">
           <button
-            onClick={handlePlayAgain}
-            className="relative group w-full px-6 sm:px-8 py-3 sm:py-3.5 overflow-hidden rounded-xl font-semibold text-white bg-gradient-to-r from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 active:scale-[0.98] transition-all duration-200"
+            onClick={(e) => { e.stopPropagation(); handlePlayAgain(); }}
+            className={`relative group w-full px-6 sm:px-8 py-3 sm:py-3.5 overflow-hidden rounded-xl font-semibold text-white bg-gradient-to-r from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 active:scale-[0.98] transition-all duration-200 ${!canRestart ? 'opacity-50' : ''}`}
+            disabled={!canRestart}
           >
             <span className="relative z-10 tracking-wide text-sm sm:text-base">FLY AGAIN</span>
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
           
           <button
-            onClick={handleMenu}
+            onClick={(e) => { e.stopPropagation(); handleMenu(); }}
             className="px-6 sm:px-8 py-2 sm:py-2.5 rounded-xl font-medium text-slate-300 bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 active:scale-[0.98] transition-all duration-200 text-sm sm:text-base"
           >
             Menu

@@ -3,7 +3,7 @@
  * Clean overlay on top of game background
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useGameContext } from '../../context/GameContext';
 import { useCloudArcade } from '../../hooks/useCloudArcade';
 
@@ -20,14 +20,30 @@ export function MenuScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleStart = () => {
+  const handleStart = useCallback(() => {
     startSession();
     dispatch({ type: 'RESET_GAME' });
     dispatch({ type: 'SET_STATE', payload: 'playing' });
-  };
+  }, [startSession, dispatch]);
+
+  // Listen for Space key to start
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        handleStart();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleStart]);
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div 
+      className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm cursor-pointer"
+      onClick={handleStart}
+      onTouchEnd={(e) => { e.preventDefault(); handleStart(); }}
+    >
       {/* Main content card - responsive sizing */}
       <div className="flex flex-col items-center gap-4 sm:gap-5 p-6 sm:p-8 w-full max-w-xs sm:max-w-sm bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-cyan-500/30 shadow-2xl">
         {/* Title */}
@@ -67,7 +83,7 @@ export function MenuScreen() {
 
         {/* Start button */}
         <button
-          onClick={handleStart}
+          onClick={(e) => { e.stopPropagation(); handleStart(); }}
           className="relative group w-full px-6 sm:px-8 py-3 sm:py-4 mt-1 overflow-hidden rounded-xl font-semibold text-white bg-gradient-to-r from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 active:scale-[0.98] transition-all duration-200"
         >
           <span className="relative z-10 tracking-wide text-base sm:text-lg">START FLIGHT</span>
