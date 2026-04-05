@@ -125,16 +125,10 @@ export function GameOverScreen() {
           </div>
         )}
 
-        {/* Stats row */}
-        <div className="flex gap-3 sm:gap-4 w-full animate-fade-slide-in delay-300">
-          <div className="flex-1 flex flex-col items-center gap-1 p-2 sm:p-3 bg-black/40 border border-white/10">
-            <span className="text-[9px] sm:text-[10px] text-white/50 uppercase tracking-wider font-mono">LVL</span>
-            <span className="text-sm sm:text-base font-bold font-mono text-white">{state.level}</span>
-          </div>
-          <div className="flex-1 flex flex-col items-center gap-1 p-2 sm:p-3 bg-black/40 border border-white/10">
-            <span className="text-[9px] sm:text-[10px] text-white/50 uppercase tracking-wider font-mono">LIVES</span>
-            <span className="text-sm sm:text-base font-bold font-mono text-white">{state.lives}</span>
-          </div>
+        {/* Level display */}
+        <div className="flex items-center gap-3 px-4 py-2 w-full bg-black/40 border border-white/10 animate-fade-slide-in delay-300">
+          <span className="text-[10px] sm:text-xs text-white/50 uppercase tracking-wider font-mono">LEVEL</span>
+          <span className="text-base sm:text-lg font-bold font-mono text-white ml-auto">{state.level}</span>
         </div>
 
         {/* Action buttons */}
