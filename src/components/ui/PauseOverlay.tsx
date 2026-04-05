@@ -60,10 +60,6 @@ export function PauseOverlay() {
             <span className="text-[10px] sm:text-xs text-white/50 uppercase tracking-wider font-mono">LVL</span>
             <span className="text-lg sm:text-xl font-bold font-mono text-white">{state.level}</span>
           </div>
-          <div className="flex-1 flex flex-col items-center gap-1 p-3 bg-black/40 border border-white/10">
-            <span className="text-[10px] sm:text-xs text-white/50 uppercase tracking-wider font-mono">LIVES</span>
-            <span className="text-lg sm:text-xl font-bold font-mono text-white">{state.lives}</span>
-          </div>
         </div>
 
         {/* Action buttons */}

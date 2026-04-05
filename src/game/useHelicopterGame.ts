@@ -268,7 +268,6 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     // RESPONSIVE GAP SIZING: Cap gap at 70% of screen height to ensure terrain is always visible
     const maxGapForScreen = canvasHeight * 0.7;
     const responsiveInitialGap = Math.min(config.initialGapSize, maxGapForScreen);
-    const responsiveMinGap = Math.min(config.minGapSize, maxGapForScreen * 0.35);
     
     t.currentGap = responsiveInitialGap;
     t.lastObstacleDistance = 0;
@@ -989,7 +988,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
       : availableWidth / 4; // 4 panels on wide
     
     // Helper: Draw clean tactical panel with angled corner (matching React clip-path)
-    const drawTacticalPanel = (x: number, y: number, w: number, h: number, isHighlight: boolean = false) => {
+    const drawTacticalPanel = (x: number, y: number, w: number, h: number) => {
       const cutSize = 6; // Bottom-right corner cut
       
       // Draw panel shape with cut corner - matches clip-path polygon
@@ -1030,7 +1029,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     
     // === PANEL 1: DISTANCE ===
     ctx.save();
-    drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+    drawTacticalPanel(panelX, panelY, panelWidth, panelHeight);
     
     ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
@@ -1049,7 +1048,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     if (isNarrowScreen) {
       // Show LEVEL on narrow screens
       ctx.save();
-      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight);
       
       ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
@@ -1063,7 +1062,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     } else {
       // Show TIME on wide screens
       ctx.save();
-      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight);
       
       const minutes = Math.floor(state.elapsedTime / 60);
       const seconds = Math.floor(state.elapsedTime % 60);
@@ -1086,7 +1085,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     if (isNarrowScreen) {
       // Show BEST on narrow screens
       ctx.save();
-      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight);
       
       ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
@@ -1103,7 +1102,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     } else {
       // Show LEVEL on wide screens
       ctx.save();
-      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight);
       
       ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
@@ -1121,7 +1120,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
       panelX += panelWidth + panelGap;
       
       ctx.save();
-      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight);
       
       ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
