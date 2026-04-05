@@ -10,6 +10,7 @@ import { MenuScreen } from './screens/MenuScreen';
 import { GameScreen } from './screens/GameScreen';
 import { PauseOverlay } from './ui/PauseOverlay';
 import { GameOverScreen } from './screens/GameOverScreen';
+import { HUD } from './ui/HUD';
 
 export function GameContainer() {
   const { state } = useGameContext();
@@ -22,6 +23,9 @@ export function GameContainer() {
       
       {/* Game always renders when not loading (for menu/gameover backgrounds) */}
       {gameState !== 'loading' && <GameScreen />}
+      
+      {/* HUD - shows during gameplay */}
+      {gameState === 'playing' && <HUD />}
       
       {/* Overlays on top of game */}
       {gameState === 'menu' && <MenuScreen />}

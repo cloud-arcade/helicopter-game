@@ -94,8 +94,10 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
   // Memoize config to prevent recreation, with mobile adjustments
   const config = useMemo(() => {
     const baseConfig = { ...DEFAULT_CONFIG, ...options.config };
+    // Note: Gap sizes will be made responsive to screen height in initTerrain
+    // These are maximum values that will be scaled down for small screens
     if (isMobile) {
-      // Even more forgiving gap sizes on mobile
+      // Even more forgiving gap sizes on mobile (will be capped at 70% of screen height)
       baseConfig.initialGapSize = 420; // vs 380 on desktop - extra room on small screens
       baseConfig.minGapSize = 150;     // vs 130 on desktop
     }
@@ -106,6 +108,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>(0);
   const isRunningRef = useRef(false);
+  const isPausedRef = useRef(false);
   
   // Callbacks ref - always use latest
   const callbacksRef = useRef(options);
@@ -162,9 +165,13 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
   const generateNextSegment = useCallback((x: number, canvasHeight: number): TerrainSegment => {
     const t = terrainRef.current;
     
+    // RESPONSIVE: Calculate min gap based on screen height
+    const maxGapForScreen = canvasHeight * 0.7;
+    const responsiveMinGap = Math.min(config.minGapSize, maxGapForScreen * 0.35);
+    
     // Gradually narrow the gap (very slowly)
-    if (t.currentGap > config.minGapSize) {
-      t.currentGap = Math.max(config.minGapSize, t.currentGap - config.gapNarrowRate);
+    if (t.currentGap > responsiveMinGap) {
+      t.currentGap = Math.max(responsiveMinGap, t.currentGap - config.gapNarrowRate);
     }
     
     t.segmentCounter++;
@@ -220,14 +227,20 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     }
     
     // Bounds - progressively tighter tunnel as game goes on
-    // More forgiving on mobile
+    // More forgiving on mobile, and RESPONSIVE to screen height
     const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || window.innerWidth < 768);
     const level = gameStateRef.current.level || 1;
     const levelNarrow = Math.min(0.10, (level - 1) * 0.015); // Narrows with each level
-    const minTop = 55;
+    
+    // RESPONSIVE MARGINS: Use percentage-based margins with minimum absolute values
+    // Add extra space for HUD at bottom (HUD is max 50px + 8px buffer)
+    const topMargin = Math.max(30, canvasHeight * 0.08);        // At least 30px or 8% of height
+    const bottomMargin = Math.max(58, canvasHeight * 0.12);     // At least 58px or 12% to account for HUD
+    
+    const minTop = topMargin;
     const maxTop = canvasHeight * (isMobile ? 0.32 : 0.28) + canvasHeight * levelNarrow;   // More space on mobile
     const minBottom = canvasHeight * (isMobile ? 0.68 : 0.72) - canvasHeight * levelNarrow; // More space on mobile
-    const maxBottom = canvasHeight - 55;
+    const maxBottom = canvasHeight - bottomMargin;
     
     // Clamp positions (snap to bounds)
     t.topY = Math.max(minTop, Math.min(maxTop, t.topY));
@@ -251,7 +264,13 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     t.segments = [];
     t.obstacles = [];
     t.distance = 0;
-    t.currentGap = config.initialGapSize;
+    
+    // RESPONSIVE GAP SIZING: Cap gap at 70% of screen height to ensure terrain is always visible
+    const maxGapForScreen = canvasHeight * 0.7;
+    const responsiveInitialGap = Math.min(config.initialGapSize, maxGapForScreen);
+    const responsiveMinGap = Math.min(config.minGapSize, maxGapForScreen * 0.35);
+    
+    t.currentGap = responsiveInitialGap;
     t.lastObstacleDistance = 0;
     t.segmentCounter = 0;
     t.stepInterval = 3;
@@ -259,8 +278,8 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     t.pendingBottomStep = 0;
     
     const centerY = canvasHeight / 2;
-    t.topY = centerY - config.initialGapSize / 2;
-    t.bottomY = centerY + config.initialGapSize / 2;
+    t.topY = centerY - responsiveInitialGap / 2;
+    t.bottomY = centerY + responsiveInitialGap / 2;
     
     const segmentCount = Math.ceil(canvasWidth / config.segmentWidth) + 10;
     
@@ -565,6 +584,9 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
   const update = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Don't update physics when paused
+    if (isPausedRef.current) return;
 
     const state = gameStateRef.current;
     const h = helicopterRef.current;
@@ -926,7 +948,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     
     // Slightly smaller on mobile for better visibility/control
     const isMobile = 'ontouchstart' in window || window.innerWidth < 768;
-    const scale = isMobile ? 0.32 : 0.4;
+    const scale = isMobile ? 0.32 : 0.35;
     const bodyWidth = 200 * scale;
     const bodyHeight = 80 * scale;
     
@@ -950,77 +972,167 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     
     ctx.restore();
 
-    // === HUD - Clean terrain-colored overlay ===
-    const hudHeight = 56;
-    const hudTopPad = 8; // Top margin/breathing room
+    // === HELICOPTER-STYLE TACTICAL HUD ===
+    // Responsive sizing - reduced height to avoid terrain conflicts
+    const isNarrowScreen = width < 500;
+    const isTinyScreen = width < 380;
+    const hudHeight = isTinyScreen ? 42 : (isNarrowScreen ? 46 : 50);
     const hudY = height - hudHeight;
+    const hudPad = isTinyScreen ? 8 : (isNarrowScreen ? 10 : 12);
+    const panelGap = isTinyScreen ? 5 : (isNarrowScreen ? 6 : 8);
     
-    // Subtle gradient matching terrain colors - blends into bottom terrain
-    const hudGrad = ctx.createLinearGradient(0, hudY, 0, height);
-    hudGrad.addColorStop(0, 'rgba(13, 17, 23, 0.0)');
-    hudGrad.addColorStop(0.15, 'rgba(13, 17, 23, 0.6)');
-    hudGrad.addColorStop(1, 'rgba(13, 17, 23, 0.85)');
-    ctx.fillStyle = hudGrad;
-    ctx.fillRect(0, hudY, width, hudHeight);
+    // Calculate panel widths (responsive)
+    const totalGaps = isNarrowScreen ? panelGap * 2 : panelGap * 3; // 2 or 3 panels
+    const availableWidth = width - (hudPad * 2) - totalGaps;
+    const panelWidth = isNarrowScreen 
+      ? availableWidth / 3  // 3 panels on narrow
+      : availableWidth / 4; // 4 panels on wide
     
-    // === DISTANCE STAT (left) ===
+    // Helper: Draw clean tactical panel with angled corner (matching React clip-path)
+    const drawTacticalPanel = (x: number, y: number, w: number, h: number, isHighlight: boolean = false) => {
+      const cutSize = 6; // Bottom-right corner cut
+      
+      // Draw panel shape with cut corner - matches clip-path polygon
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + h - cutSize);
+      ctx.lineTo(x + w - cutSize, y + h);
+      ctx.lineTo(x, y + h);
+      ctx.closePath();
+      
+      // Fill background - match React bg-black/40
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.fill();
+      
+      // Thin border - match React border-white/10
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Bottom-right corner accent (2px border matching React)
+      ctx.beginPath();
+      ctx.moveTo(x + w, y + h - cutSize);
+      ctx.lineTo(x + w - cutSize, y + h);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    };
+    
+    const panelHeight = hudHeight - 6;
+    const panelY = hudY + 3;
+    
+    // PANEL POSITIONS
+    let panelX = hudPad;
+    
+    const labelSize = isTinyScreen ? 7 : 8;
+    const valueSize = isTinyScreen ? 14 : (isNarrowScreen ? 16 : 18);
+    
+    // === PANEL 1: DISTANCE ===
     ctx.save();
-    const distX = 30;
+    drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
     
-    ctx.font = '500 10px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
-    ctx.textAlign = 'left';
-    ctx.fillText('DISTANCE', distX, hudY + hudTopPad + 14);
-    
-    ctx.font = 'bold 22px "SF Mono", "JetBrains Mono", Consolas, monospace';
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText(state.score.toLocaleString(), distX, hudY + hudTopPad + 38);
-    ctx.restore();
-
-    // === LEVEL STAT (center) - clean minimal ===
-    ctx.save();
-    const levelX = width / 2;
-    
-    ctx.font = '500 10px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(167, 139, 250, 0.6)';
+    ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.textAlign = 'center';
-    ctx.fillText('LEVEL', levelX, hudY + hudTopPad + 14);
+    ctx.fillText('DIST', panelX + panelWidth / 2, panelY + 12);
     
-    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#a78bfa';
-    ctx.fillText(state.level.toString(), levelX, hudY + hudTopPad + 38);
+    ctx.font = `bold ${valueSize}px "SF Mono", Consolas, monospace`;
+    ctx.fillStyle = '#ffffff';
+    const distStr = state.score.toLocaleString() + 'm';
+    ctx.fillText(distStr, panelX + panelWidth / 2, panelY + panelHeight - 6);
     ctx.restore();
-
-    // === BEST SCORE (right) ===
-    ctx.save();
-    const bestX = width - 30;
     
-    ctx.font = '500 10px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
-    ctx.textAlign = 'right';
-    ctx.fillText('BEST', bestX, hudY + hudTopPad + 14);
+    panelX += panelWidth + panelGap;
     
-    ctx.font = 'bold 22px "SF Mono", "JetBrains Mono", Consolas, monospace';
-    ctx.fillStyle = '#fbbf24';
-    ctx.fillText(state.highScore.toLocaleString(), bestX, hudY + hudTopPad + 38);
-    ctx.restore();
-
-    // === TIME DISPLAY (between distance and level) ===
-    ctx.save();
-    const timeX = distX + 150;
-    const minutes = Math.floor(state.elapsedTime / 60);
-    const seconds = Math.floor(state.elapsedTime % 60);
-    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    // === PANEL 2: TIME (on wide) or LEVEL (on narrow) ===
+    if (isNarrowScreen) {
+      // Show LEVEL on narrow screens
+      ctx.save();
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      
+      ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('LVL', panelX + panelWidth / 2, panelY + 12);
+      
+      ctx.font = `bold ${valueSize}px "SF Mono", Consolas, monospace`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(state.level.toString(), panelX + panelWidth / 2, panelY + panelHeight - 6);
+      ctx.restore();
+    } else {
+      // Show TIME on wide screens
+      ctx.save();
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      
+      const minutes = Math.floor(state.elapsedTime / 60);
+      const seconds = Math.floor(state.elapsedTime % 60);
+      const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('TIME', panelX + panelWidth / 2, panelY + 12);
+      
+      ctx.font = `bold ${valueSize}px "SF Mono", Consolas, monospace`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(timeStr, panelX + panelWidth / 2, panelY + panelHeight - 6);
+      ctx.restore();
+    }
     
-    ctx.font = '500 10px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.5)';
-    ctx.textAlign = 'left';
-    ctx.fillText('TIME', timeX, hudY + hudTopPad + 14);
+    panelX += panelWidth + panelGap;
     
-    ctx.font = '600 15px "SF Mono", Consolas, monospace';
-    ctx.fillStyle = 'rgba(226, 232, 240, 0.7)';
-    ctx.fillText(timeStr, timeX, hudY + hudTopPad + 36);
-    ctx.restore();
+    // === PANEL 3: LEVEL (wide) or BEST (narrow) ===
+    if (isNarrowScreen) {
+      // Show BEST on narrow screens
+      ctx.save();
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      
+      ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('BEST', panelX + panelWidth / 2, panelY + 12);
+      
+      ctx.font = `bold ${valueSize}px "SF Mono", Consolas, monospace`;
+      ctx.fillStyle = '#ffffff';
+      const bestStr = isTinyScreen && state.highScore > 9999 
+        ? (state.highScore / 1000).toFixed(1) + 'Km'
+        : state.highScore.toLocaleString() + 'm';
+      ctx.fillText(bestStr, panelX + panelWidth / 2, panelY + panelHeight - 6);
+      ctx.restore();
+    } else {
+      // Show LEVEL on wide screens
+      ctx.save();
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      
+      ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('LEVEL', panelX + panelWidth / 2, panelY + 12);
+      
+      ctx.font = `bold ${valueSize}px "SF Mono", Consolas, monospace`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(state.level.toString(), panelX + panelWidth / 2, panelY + panelHeight - 6);
+      ctx.restore();
+    }
+    
+    // === PANEL 4: BEST SCORE (wide screens only) ===
+    if (!isNarrowScreen) {
+      panelX += panelWidth + panelGap;
+      
+      ctx.save();
+      drawTacticalPanel(panelX, panelY, panelWidth, panelHeight, false);
+      
+      ctx.font = `600 ${labelSize}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('BEST', panelX + panelWidth / 2, panelY + 12);
+      
+      ctx.font = `bold ${valueSize}px "SF Mono", Consolas, monospace`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(state.highScore.toLocaleString() + 'm', panelX + panelWidth / 2, panelY + panelHeight - 6);
+      ctx.restore();
+    }
 
     // Note: Ready overlay handled by React MenuScreen component
   }, [config]);
@@ -1086,6 +1198,13 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     gameStateRef.current.highScore = score;
   }, []);
 
+  /**
+   * Set paused state
+   */
+  const setPaused = useCallback((paused: boolean) => {
+    isPausedRef.current = paused;
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -1104,5 +1223,6 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     handleInputEnd,
     getGameState,
     setHighScore,
-  }), [initGame, startGame, resetGame, startLoop, stopLoop, handleInputStart, handleInputEnd, getGameState, setHighScore]);
+    setPaused,
+  }), [initGame, startGame, resetGame, startLoop, stopLoop, handleInputStart, handleInputEnd, getGameState, setHighScore, setPaused]);
 }

@@ -55,6 +55,9 @@ export function GameScreen() {
   // First click/tap on canvas will start the game via handleInputStart
   useEffect(() => {
     if (state.gameState === 'playing' && gameInitializedRef.current) {
+      // Unpause the game engine
+      gameRef.current.setPaused(false);
+      
       const engineState = gameRef.current.getGameState();
       if (engineState.phase === 'crashed') {
         // Coming from game over - reset game to 'ready' phase
@@ -63,6 +66,9 @@ export function GameScreen() {
       }
       // If already in 'ready' phase (from menu), do nothing
       // User's first click will start
+    } else if (state.gameState === 'paused') {
+      // Pause the game engine - freezes physics
+      gameRef.current.setPaused(true);
     }
   }, [state.gameState]);
 
@@ -72,12 +78,19 @@ export function GameScreen() {
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    const rect = container.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
-    
+    // Setup canvas - use CSS dimensions for game logic
+    const setupCanvas = () => {
+      const rect = container.getBoundingClientRect();
+      
+      // Set both CSS and canvas size to the same logical dimensions
+      // This ensures game logic and rendering use the same coordinate system
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    setupCanvas();
     gameRef.current.initGame(canvas);
     gameRef.current.setHighScore(stateRef.current.highScore);
     gameRef.current.startLoop();
@@ -85,11 +98,9 @@ export function GameScreen() {
 
     // Handle resize without full reinit
     const handleResize = () => {
-      const rect = container.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
+      setupCanvas();
+      // Reinit terrain for new dimensions
+      gameRef.current.resetGame();
     };
 
     const observer = new ResizeObserver(handleResize);
@@ -105,6 +116,19 @@ export function GameScreen() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return;
+      
+      // ESC to pause/unpause
+      if (e.code === 'Escape' || e.key === 'Escape') {
+        e.preventDefault();
+        if (stateRef.current.gameState === 'playing') {
+          dispatchRef.current({ type: 'SET_STATE', payload: 'paused' });
+        } else if (stateRef.current.gameState === 'paused') {
+          dispatchRef.current({ type: 'SET_STATE', payload: 'playing' });
+        }
+        return;
+      }
+      
+      // Space to fly
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
         gameRef.current.handleInputStart();

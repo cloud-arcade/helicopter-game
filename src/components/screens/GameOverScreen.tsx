@@ -1,6 +1,6 @@
 /**
  * Game Over Screen Component
- * Clean overlay on top of crashed game state
+ * Tactical crash report overlay - helicopter nav style
  */
 
 import { useEffect, useState, useCallback } from 'react';
@@ -75,69 +75,91 @@ export function GameOverScreen() {
 
   return (
     <div 
-      className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm cursor-pointer"
+      className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md cursor-pointer animate-fade-in"
       onClick={handlePlayAgain}
       onTouchEnd={(e) => { e.preventDefault(); handlePlayAgain(); }}
     >
-      {/* Main content card - responsive sizing */}
-      <div className="flex flex-col items-center gap-3 sm:gap-4 p-6 sm:p-8 w-full max-w-xs sm:max-w-sm bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-red-500/30 shadow-2xl">
-        {/* Crash title */}
-        <div className="flex flex-col items-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-red-500 to-orange-500">
-            CRASH!
+      {/* Tactical crash report card */}
+      <div 
+        className="relative flex flex-col items-center gap-3 sm:gap-4 p-6 sm:p-8 w-full max-w-xs sm:max-w-sm bg-slate-900/95 backdrop-blur-xl border border-white/20 shadow-2xl clip-tactical animate-fade-slide-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Corner accents */}
+        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white/30" />
+        <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white/30" />
+
+        {/* Warning header with animated line */}
+        <div className="flex flex-col items-center gap-1 animate-slide-down">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-[1px] bg-white/30" />
+            <span className="text-[10px] text-white/40 font-mono tracking-widest uppercase">System Alert</span>
+            <div className="w-8 h-[1px] bg-white/30" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-wider text-white uppercase">
+            // CRASH
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">Flight terminated</p>
+          <p className="text-[10px] sm:text-xs text-white/40 font-mono tracking-wider">FLIGHT TERMINATED</p>
         </div>
 
-        {/* Score display */}
-        <div className="flex flex-col items-center py-2 sm:py-3">
-          <span className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider">Distance</span>
-          <strong className="text-4xl sm:text-5xl font-bold font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-teal-400">
-            {countedScore.toLocaleString()}
+        {/* Distance score - big tactical display */}
+        <div className="flex flex-col items-center w-full py-3 sm:py-4 bg-black/40 border border-white/10 animate-fade-slide-in delay-100">
+          <span className="text-[10px] sm:text-xs text-white/50 uppercase tracking-wider font-mono mb-1">TOTAL DISTANCE</span>
+          <strong className="text-3xl sm:text-4xl font-bold font-mono text-white animate-count-up">
+            {countedScore.toLocaleString()}m
           </strong>
         </div>
 
         {/* New record badge */}
         {showNewRecord && (
-          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400/40 rounded-xl animate-bounce">
-            <svg className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            <span className="text-amber-300 font-semibold text-xs sm:text-sm">NEW RECORD!</span>
+          <div className="flex items-center gap-2 px-4 py-2 w-full bg-white/10 border border-white/30 animate-fade-slide-in delay-200 animate-border-glow">
+            <div className="w-2 h-2 bg-white animate-glow-pulse" />
+            <span className="text-white font-semibold text-xs sm:text-sm font-mono tracking-wide uppercase">New Record</span>
           </div>
         )}
 
         {/* Best score (when not new record) */}
         {!showNewRecord && state.highScore > 0 && (
-          <div className="flex flex-col items-center px-4 sm:px-5 py-2 bg-slate-800/60 rounded-lg">
-            <span className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider">Best</span>
-            <span className="text-base sm:text-lg font-mono font-semibold text-amber-400">{state.highScore.toLocaleString()}</span>
+          <div className="flex items-center gap-3 px-4 py-2 w-full bg-black/40 border border-white/10 animate-fade-slide-in delay-200">
+            <span className="text-[10px] sm:text-xs text-white/50 uppercase tracking-wider font-mono">BEST</span>
+            <span className="text-base sm:text-lg font-bold font-mono text-white ml-auto">{state.highScore.toLocaleString()}m</span>
           </div>
         )}
 
+        {/* Stats row */}
+        <div className="flex gap-3 sm:gap-4 w-full animate-fade-slide-in delay-300">
+          <div className="flex-1 flex flex-col items-center gap-1 p-2 sm:p-3 bg-black/40 border border-white/10">
+            <span className="text-[9px] sm:text-[10px] text-white/50 uppercase tracking-wider font-mono">LVL</span>
+            <span className="text-sm sm:text-base font-bold font-mono text-white">{state.level}</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 p-2 sm:p-3 bg-black/40 border border-white/10">
+            <span className="text-[9px] sm:text-[10px] text-white/50 uppercase tracking-wider font-mono">LIVES</span>
+            <span className="text-sm sm:text-base font-bold font-mono text-white">{state.lives}</span>
+          </div>
+        </div>
+
         {/* Action buttons */}
-        <div className="flex flex-col gap-2 w-full mt-1 sm:mt-2">
+        <div className="flex flex-col gap-2 w-full mt-1 sm:mt-2 animate-fade-slide-in delay-400">
           <button
             onClick={(e) => { e.stopPropagation(); handlePlayAgain(); }}
-            className={`relative group w-full px-6 sm:px-8 py-3 sm:py-3.5 overflow-hidden rounded-xl font-semibold text-white bg-gradient-to-r from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 active:scale-[0.98] transition-all duration-200 ${!canRestart ? 'opacity-50' : ''}`}
+            className={`relative group w-full px-6 py-3 overflow-hidden bg-white/10 hover:bg-white/20 border border-white/30 hover:border-white/50 active:bg-white/30 transition-all duration-200 clip-tactical-btn ${!canRestart ? 'opacity-40' : 'animate-border-glow'}`}
             disabled={!canRestart}
           >
-            <span className="relative z-10 tracking-wide text-sm sm:text-base">FLY AGAIN</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span className="relative z-10 font-semibold text-white tracking-widest text-sm sm:text-base uppercase">Fly Again</span>
+            <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/40 group-hover:border-white/60" />
           </button>
           
           <button
             onClick={(e) => { e.stopPropagation(); handleMenu(); }}
-            className="px-6 sm:px-8 py-2 sm:py-2.5 rounded-xl font-medium text-slate-300 bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 active:scale-[0.98] transition-all duration-200 text-sm sm:text-base"
+            className="w-full px-6 py-2.5 bg-transparent hover:bg-white/5 border border-white/20 hover:border-white/30 active:bg-white/10 transition-all duration-200 text-white/70 hover:text-white text-xs sm:text-sm uppercase tracking-wide font-mono"
           >
-            Menu
+            Main Menu
           </button>
         </div>
 
-        {/* Tip */}
-        <p className="text-[10px] sm:text-xs text-slate-500 text-center">
-          Hold to rise • Release to fall
-        </p>
+        {/* Hint */}
+        <div className="text-[10px] sm:text-xs text-white/30 font-mono animate-fade-slide-in delay-500">
+          SPACE to retry
+        </div>
       </div>
     </div>
   );

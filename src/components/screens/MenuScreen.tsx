@@ -1,6 +1,6 @@
 /**
  * Menu Screen Component
- * Clean overlay on top of game background
+ * Tactical helicopter nav-style menu overlay
  */
 
 import { useEffect, useState, useCallback } from 'react';
@@ -40,67 +40,77 @@ export function MenuScreen() {
 
   return (
     <div 
-      className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm cursor-pointer"
+      className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md cursor-pointer animate-fade-in"
       onClick={handleStart}
       onTouchEnd={(e) => { e.preventDefault(); handleStart(); }}
     >
-      {/* Main content card - responsive sizing */}
-      <div className="flex flex-col items-center gap-4 sm:gap-5 p-6 sm:p-8 w-full max-w-xs sm:max-w-sm bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-cyan-500/30 shadow-2xl">
+      {/* Tactical card */}
+      <div 
+        className="relative flex flex-col items-center gap-4 sm:gap-5 p-6 sm:p-8 w-full max-w-xs sm:max-w-sm bg-slate-900/95 backdrop-blur-xl border border-white/20 shadow-2xl clip-tactical animate-fade-slide-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Corner accent */}
+        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white/30" />
+        <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white/30" />
+
         {/* Title */}
-        <div className="flex flex-col items-center gap-1">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-400 to-cyan-400">
-            HELICOPTER
+        <div className="flex flex-col items-center gap-1 animate-fade-slide-in delay-100">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-wider text-white uppercase">
+            // HELICOPTER
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 tracking-[0.2em] sm:tracking-[0.25em] uppercase font-medium">Cave Run</p>
+          <p className="text-[10px] sm:text-xs text-white/50 tracking-[0.3em] uppercase font-mono">Cave Run</p>
         </div>
 
         {/* Helicopter icon */}
-        <div className="relative my-1">
-          <div className="absolute inset-0 bg-cyan-400/20 blur-xl rounded-full scale-125" />
+        <div className="relative my-1 animate-fade-slide-in delay-200">
           <img 
             src={`${import.meta.env.BASE_URL}assets/sprites/attack_helicopter/pngs/flying_side_view/attack_helicopter_side_view_frame_1.png`} 
             alt="Helicopter"
-            className="relative w-24 sm:w-32 h-auto drop-shadow-xl"
+            className="relative w-24 sm:w-32 h-auto drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]"
             style={{ transform: `translateY(${helicopterY}px)` }}
           />
         </div>
 
-        {/* Instructions */}
-        <p className="text-xs sm:text-sm text-slate-400 text-center">
-          <span className="px-1.5 sm:px-2 py-0.5 bg-slate-800 rounded text-[10px] sm:text-xs text-cyan-400 mr-1.5 sm:mr-2">SPACE</span>
-          or
-          <span className="px-1.5 sm:px-2 py-0.5 bg-slate-800 rounded text-[10px] sm:text-xs text-cyan-400 mx-1.5 sm:mx-2">TAP</span>
-          to fly
-        </p>
+        {/* Control instructions - tactical style */}
+        <div className="flex gap-3 items-center text-white/60 animate-fade-slide-in delay-300">
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-1 bg-white/10 border border-white/20 text-[10px] sm:text-xs text-white/80 font-mono clip-tactical-sm">SPACE</span>
+          </div>
+          <span className="text-white/30 text-xs">/</span>
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-1 bg-white/10 border border-white/20 text-[10px] sm:text-xs text-white/80 font-mono clip-tactical-sm">TAP</span>
+          </div>
+          <span className="text-[10px] sm:text-xs text-white/40 font-mono">=&nbsp;FLY</span>
+        </div>
 
-        {/* High score */}
+        {/* High score panel */}
         {state.highScore > 0 && (
-          <div className="flex flex-col items-center px-4 sm:px-5 py-2 bg-slate-800/60 rounded-lg border border-amber-500/20">
-            <span className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider">Best</span>
-            <span className="text-lg sm:text-xl font-mono font-bold text-amber-400">{state.highScore.toLocaleString()}</span>
+          <div className="flex items-center gap-3 px-4 py-2 w-full bg-black/40 border border-white/10 animate-fade-slide-in delay-300">
+            <span className="text-[10px] sm:text-xs text-white/50 uppercase tracking-wider font-mono">BEST</span>
+            <span className="text-base sm:text-lg font-bold font-mono text-white ml-auto">{state.highScore.toLocaleString()}m</span>
           </div>
         )}
 
         {/* Start button */}
         <button
           onClick={(e) => { e.stopPropagation(); handleStart(); }}
-          className="relative group w-full px-6 sm:px-8 py-3 sm:py-4 mt-1 overflow-hidden rounded-xl font-semibold text-white bg-gradient-to-r from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 active:scale-[0.98] transition-all duration-200"
+          className="relative group w-full px-6 py-3 sm:py-3.5 mt-1 overflow-hidden bg-white/10 hover:bg-white/20 border border-white/30 hover:border-white/50 active:bg-white/30 transition-all duration-200 clip-tactical-btn animate-fade-slide-in delay-400 animate-border-glow"
         >
-          <span className="relative z-10 tracking-wide text-base sm:text-lg">START FLIGHT</span>
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <span className="relative z-10 font-semibold text-white tracking-widest text-sm sm:text-base uppercase">Start Flight</span>
+          <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/40 group-hover:border-white/60" />
         </button>
 
-        {/* Connection status */}
-        <div className="flex items-center gap-2 text-[10px] sm:text-xs">
+        {/* System status */}
+        <div className="flex items-center gap-2 text-[10px] sm:text-xs font-mono animate-fade-slide-in delay-500">
           {state.isPlatformConnected ? (
             <>
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-              <span className="text-teal-400/80">CloudArcade</span>
+              <span className="w-1.5 h-1.5 bg-white animate-glow-pulse" />
+              <span className="text-white/50">SYS ONLINE</span>
             </>
           ) : (
             <>
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-              <span className="text-slate-500">Standalone</span>
+              <span className="w-1.5 h-1.5 bg-white/40" />
+              <span className="text-white/30">STANDALONE</span>
             </>
           )}
         </div>
