@@ -20,10 +20,23 @@
 
   body {
     @apply bg-background text-white font-sans overflow-hidden;
+    /* Prevent text selection and touch callouts on mobile */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
   #root {
     @apply w-screen h-screen flex items-center justify-center;
+    /* Ensure no text selection in game container */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
   button {
