@@ -6,14 +6,15 @@
 import { useEffect, useState } from 'react';
 import { useGameContext } from '../../context/GameContext';
 
-// Assets to preload
+// Assets to preload - using BASE_URL for GitHub Pages
+const baseUrl = import.meta.env.BASE_URL;
 const HELICOPTER_ASSETS = [
-  '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_body.png',
-  '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_top_rotor_frame_1.png',
-  '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_top_rotor_frame_2.png',
-  '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_back_rotor_frame_1.png',
-  '/assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_back_rotor_frame_2.png',
-  '/assets/sprites/attack_helicopter/pngs/flying_side_view/attack_helicopter_side_view_frame_1.png',
+  `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_body.png`,
+  `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_top_rotor_frame_1.png`,
+  `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_top_rotor_frame_2.png`,
+  `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_back_rotor_frame_1.png`,
+  `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/parts/attack_helicopter_back_rotor_frame_2.png`,
+  `${baseUrl}assets/sprites/attack_helicopter/pngs/flying_side_view/attack_helicopter_side_view_frame_1.png`,
 ];
 
 function preloadImage(src: string): Promise<void> {

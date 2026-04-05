@@ -95,9 +95,9 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
   const config = useMemo(() => {
     const baseConfig = { ...DEFAULT_CONFIG, ...options.config };
     if (isMobile) {
-      // More forgiving gap sizes on mobile
-      baseConfig.initialGapSize = 320; // vs 280 on desktop
-      baseConfig.minGapSize = 160;     // vs 140 on desktop
+      // Even more forgiving gap sizes on mobile
+      baseConfig.initialGapSize = 420; // vs 380 on desktop - extra room on small screens
+      baseConfig.minGapSize = 150;     // vs 130 on desktop
     }
     return baseConfig;
   }, [isMobile]);
@@ -1022,59 +1022,7 @@ export function useHelicopterGame(options: UseHelicopterGameOptions = {}) {
     ctx.fillText(timeStr, timeX, hudY + hudTopPad + 36);
     ctx.restore();
 
-    // === READY SCREEN OVERLAY ===
-    if (state.phase === 'ready') {
-      // Frosted overlay
-      ctx.fillStyle = 'rgba(3, 7, 18, 0.9)';
-      ctx.fillRect(0, 0, width, height);
-      
-      // Center card
-      const cardWidth = Math.min(400, width - 60);
-      const cardHeight = 220;
-      const cardX = (width - cardWidth) / 2;
-      const cardY = (height - cardHeight) / 2 - 20;
-      
-      // Card background with cyan border
-      ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(cardX, cardY, cardWidth, cardHeight, 16);
-      ctx.fillStyle = 'rgba(13, 17, 23, 0.95)';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.restore();
-      
-      // Ready title with cyan glow
-      ctx.save();
-      ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 30;
-      ctx.font = 'bold 42px system-ui, -apple-system, sans-serif';
-      ctx.fillStyle = '#38bdf8';
-      ctx.textAlign = 'center';
-      ctx.fillText('READY', width / 2, cardY + 60);
-      ctx.restore();
-      
-      // Instructions
-      ctx.font = '500 18px system-ui, -apple-system, sans-serif';
-      ctx.fillStyle = '#e2e8f0';
-      ctx.fillText('Click or Space to Start', width / 2, cardY + 110);
-      
-      ctx.font = '400 14px system-ui, -apple-system, sans-serif';
-      ctx.fillStyle = 'rgba(186, 230, 253, 0.8)';
-      ctx.fillText('Hold to rise • Release to fall', width / 2, cardY + 145);
-      
-      // Animated indicator dots (cyan)
-      const dotY = cardY + 185;
-      const time = Date.now() / 300;
-      for (let i = 0; i < 3; i++) {
-        const alpha = 0.3 + 0.7 * Math.max(0, Math.sin(time - i * 0.5));
-        ctx.beginPath();
-        ctx.arc(width / 2 - 20 + i * 20, dotY, 4, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(56, 189, 248, ${alpha})`;
-        ctx.fill();
-      }
-    }
+    // Note: Ready overlay handled by React MenuScreen component
   }, [config]);
 
   /**

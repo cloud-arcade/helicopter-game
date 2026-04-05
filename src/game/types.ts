@@ -90,11 +90,11 @@ export const DEFAULT_CONFIG: GameConfig = {
   maxVelocity: 12,
   helicopterX: 0.18, // Slightly more room to react
   
-  // Terrain - dynamic flowing cave with curves (easier)
+  // Terrain - dynamic flowing cave with curves (easier start, tighter over time)
   segmentWidth: 15,     // Small segments for smooth flowing curves
-  initialGapSize: 280,  // Starting gap
-  minGapSize: 140,      // Minimum gap - gets tight!
-  gapNarrowRate: 0.015, // Narrows noticeably as you play
+  initialGapSize: 380,  // Wide starting gap - gives room to learn
+  minGapSize: 130,      // Minimum gap - gets quite tight!
+  gapNarrowRate: 0.012, // Gradual narrowing for smooth difficulty curve
   stepSize: 8,          // Used for bounds
   
   // Obstacles (blocks)

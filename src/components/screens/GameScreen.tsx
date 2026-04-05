@@ -32,6 +32,9 @@ export function GameScreen() {
     gameOver(finalScore, true);
     endSession();
     
+    // Store final score in React context for GameOverScreen
+    dispatchRef.current({ type: 'SET_SCORE', payload: finalScore });
+    
     if (finalScore > stateRef.current.highScore) {
       dispatchRef.current({ type: 'SET_HIGH_SCORE', payload: finalScore });
     }
@@ -47,6 +50,21 @@ export function GameScreen() {
   useEffect(() => {
     gameRef.current = game;
   });
+
+  // Handle game state transitions - reset to 'ready' but don't auto-start
+  // First click/tap on canvas will start the game via handleInputStart
+  useEffect(() => {
+    if (state.gameState === 'playing' && gameInitializedRef.current) {
+      const engineState = gameRef.current.getGameState();
+      if (engineState.phase === 'crashed') {
+        // Coming from game over - reset game to 'ready' phase
+        // User's first click will start it
+        gameRef.current.resetGame();
+      }
+      // If already in 'ready' phase (from menu), do nothing
+      // User's first click will start
+    }
+  }, [state.gameState]);
 
   // Initialize canvas and game ONCE when mounted
   useEffect(() => {
